@@ -121,7 +121,7 @@
     const productList = document.getElementById('product-list');
     const products = [];
 
-    let photoData = null; // To store captured photo temporarily
+    let photoData = null;
 
     // Show camera when "Capture Photo" is clicked
     photoButton.addEventListener('click', () => {
@@ -132,7 +132,13 @@
       saveButton.style.display = 'none'; // Hide the save button
 
       cameraContainer.style.display = 'block';
-      navigator.mediaDevices.getUserMedia({ video: true })
+
+      // Request access to the back camera
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { exact: "environment" } // Use back camera
+        }
+      })
         .then(stream => {
           video.srcObject = stream;
         })
@@ -242,5 +248,3 @@
   </script>
 </body>
 </html>
-
-
