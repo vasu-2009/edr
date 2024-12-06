@@ -77,9 +77,8 @@
     /* Popup Notification Styling */
     .popup {
       position: fixed;
-      top: 20px; /* Position the popup near the top of the screen */
-      left: 50%; /* Center the popup horizontally */
-      transform: translateX(-50%); /* Adjust for centering */
+      bottom: 20px;
+      right: 20px;
       background-color: #333;
       color: white;
       padding: 15px;
@@ -107,7 +106,7 @@
     @keyframes fadeIn {
       from {
         opacity: 0;
-        transform: translateY(-20px); /* Animate from above */
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
@@ -122,7 +121,7 @@
       }
       to {
         opacity: 0;
-        transform: translateY(-20px); /* Animate upwards */
+        transform: translateY(20px);
       }
     }
   </style>
@@ -271,29 +270,6 @@
       productForm.reset();
     });
 
-    // Request permission for notifications
-    function requestNotificationPermission() {
-      if (Notification.permission !== "granted") {
-        Notification.requestPermission().then(permission => {
-          if (permission === "granted") {
-            console.log('Notification permission granted.');
-          } else {
-            alert('Notifications are blocked. Please enable them.');
-          }
-        });
-      }
-    }
-
-    // Show mobile notification
-    function showMobileNotification(message) {
-      if (Notification.permission === "granted") {
-        new Notification("Product Expiry Alert", {
-          body: message,
-          icon: 'https://via.placeholder.com/128', // Placeholder icon
-        });
-      }
-    }
-
     // Show popup notification
     function showPopup(message) {
       const popupBody = popup.querySelector('.popup-body');
@@ -304,7 +280,7 @@
       }, 5000); // Hide popup after 5 seconds
     }
 
-    // Update the product list and check for expiry
+    // Update the product list
     function updateProductList() {
       productList.innerHTML = '';
       const today = new Date();
@@ -317,45 +293,45 @@
         const row = document.createElement('tr');
         row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
 
+        // Add product photo
         const photoCell = document.createElement('td');
         const img = document.createElement('img');
         img.src = product.photo;
         img.alt = 'Product Photo';
-        img.width = 50;
-        img.height = 50;
+        img.style.width = '100px';
         photoCell.appendChild(img);
         row.appendChild(photoCell);
 
-        const daysCell = document.createElement('td');
-        daysCell.textContent = `${daysLeft} days`;
-        row.appendChild(daysCell);
+        // Add days left
+        const daysLeftCell = document.createElement('td');
+        daysLeftCell.textContent = daysLeft >= 0 ? `${daysLeft} days left` : 'Expired';
+        row.appendChild(daysLeftCell);
 
-        const actionCell = document.createElement('td');
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => {
-          products.splice(index, 1);
-          updateProductList();
-          showPopup('Product deleted successfully.');
+        // Add action buttons
+        const actionsCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.style.backgroundColor = '#dc3545';
+        removeButton.addEventListener('click', () => {
+          products.splice(index, 1); // Remove product from the array
+          updateProductList(); // Refresh the list
         });
-        actionCell.appendChild(deleteButton);
-        row.appendChild(actionCell);
+        actionsCell.appendChild(removeButton);
+        row.appendChild(actionsCell);
 
         productList.appendChild(row);
 
-        // Send mobile notification when product is about to expire or is expired
-        if (daysLeft <= 3 && daysLeft >= 0) {
-          showMobileNotification('A product is about to expire in 3 days or less!');
-        } else if (daysLeft < 0) {
-          showMobileNotification('A product has expired!');
+        // Notify if product is close to expiry (3 days or less)
+        if (daysLeft > 0 && daysLeft <= 3) {
+          showPopup(`Reminder: The product with expiry date ${product.expiryDate} will expire in ${daysLeft} day(s).`);
+        }
+
+        // Notify if product is expired
+        if (daysLeft < 0) {
+          showPopup(`The product with expiry date ${product.expiryDate} has expired.`);
         }
       });
     }
-
-    // Request permission for notifications when page loads
-    document.addEventListener('DOMContentLoaded', requestNotificationPermission);
   </script>
 </body>
 </html>
-
-
