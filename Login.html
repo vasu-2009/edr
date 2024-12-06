@@ -55,7 +55,7 @@
     <form id="login-form">
       <label for="email">Enter your email:</label>
       <input type="email" id="email" placeholder="Enter your email" required>
-      <a href="EDR4.html"><button type="submit">Login</button></a>
+   <button type="submit">Login</button>
     </form>
   </div>
 
@@ -68,7 +68,7 @@
 
       if (email) {
         localStorage.setItem('userEmail', email);  // Save email in localStorage
-        window.location.href = 'expiry-tracker.html';  // Redirect to main page
+        window.location.href = 'index.html';  // Redirect to main page
       } else {
         alert('Please enter a valid email.');
       }
