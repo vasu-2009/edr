@@ -69,6 +69,10 @@
     .expired {
       background-color: #ffcccc;
     }
+
+    .warning {
+      background-color: #fff3cd;
+    }
   </style>
 </head>
 <body>
@@ -122,7 +126,8 @@
     const expiryDateInput = document.getElementById('expiry-date');
     const productList = document.getElementById('product-list');
     const products = [];
-    let photoData = null;
+
+    let photoData = null; // To store captured photo temporarily
     let currentFacingMode = 'environment'; // Default to back camera
 
     // Show camera when "Capture Photo" is clicked
@@ -142,13 +147,13 @@
       navigator.mediaDevices.getUserMedia({
         video: { facingMode: { exact: currentFacingMode } }
       })
-        .then(stream => {
-          video.srcObject = stream;
-        })
-        .catch(error => {
-          console.error('Error accessing camera:', error);
-          alert('Unable to access your camera. Please check your device settings.');
-        });
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(error => {
+        console.error('Error accessing camera:', error);
+        alert('Unable to access your camera. Please check your device settings.');
+      });
     }
 
     // Toggle camera between front and back
@@ -218,7 +223,7 @@
         const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
         const row = document.createElement('tr');
-        row.className = daysLeft < 0 ? 'expired' : '';
+        row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
 
         // Add product photo
         const photoCell = document.createElement('td');
@@ -248,54 +253,17 @@
 
         productList.appendChild(row);
 
+        // Notify if product is close to expiry
+        if (daysLeft > 0 && daysLeft <= 3) {
+          alert(`Reminder: The product with expiry date ${product.expiryDate} will expire in ${daysLeft} day(s).`);
+        }
+
         // Notify if product is expired
         if (daysLeft < 0) {
           alert(`The product with expiry date ${product.expiryDate} has expired.`);
         }
       });
     }
-
-    // Function to check for products nearing expiry
-    function checkForNotifications() {
-      const today = new Date();
-
-      products.forEach((product) => {
-        const expiryDate = new Date(product.expiryDate);
-        const timeDiff = expiryDate - today;
-        const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-        if (daysLeft === 3) {
-          showNotification(product.photo, `The product will expire in 3 days!`);
-        }
-      });
-    }
-
-    // Function to show notifications
-    function showNotification(image, message) {
-      if (Notification.permission === "granted") {
-        new Notification("Product Expiry Reminder", {
-          body: message,
-          icon: image || "https://via.placeholder.com/128" // Fallback icon if no image is available
-        });
-      }
-    }
-
-    // Request notification permission
-    if (Notification.permission === "default") {
-      Notification.requestPermission().then((permission) => {
-        if (permission !== "granted") {
-          alert("Please enable notifications to receive expiry alerts.");
-        }
-      });
-    }
-
-    // Initial check when the page loads
-    checkForNotifications();
-
-    // Periodically check every 24 hours (in milliseconds)
-    setInterval(checkForNotifications, 24 * 60 * 60 * 1000);
   </script>
 </body>
 </html>
-
-
