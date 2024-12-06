@@ -16,7 +16,7 @@
       margin-top: 20px;
     }
 
-    .form-container, .product-list {
+    .form-container, .product-list, #camera-container {
       margin: 20px auto;
       max-width: 400px;
       text-align: left;
@@ -40,6 +40,12 @@
 
     button:hover {
       background-color: #0056b3;
+    }
+
+    video, canvas {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
 
     .product-list table {
@@ -67,6 +73,57 @@
     .warning {
       background-color: #fff3cd;
     }
+
+    /* Popup Notification Styling */
+    .popup {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+      animation: fadeIn 0.5s, fadeOut 0.5s 4.5s;
+    }
+
+    .popup.show {
+      display: block;
+    }
+
+    .popup-header {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .popup-body {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -77,11 +134,19 @@
       <label for="expiry-date">Select Expiry Date:</label>
       <input type="date" id="expiry-date" required>
 
-      <label for="scheduled-date">Schedule Notification Date:</label>
-      <input type="date" id="scheduled-date" required>
+      <label for="photo-button">Take Product Photo:</label>
+      <button type="button" id="photo-button">Capture Photo</button>
 
       <input type="submit" value="Save Product">
     </form>
+  </div>
+
+  <div id="camera-container" style="display: none;">
+    <video id="video" autoplay></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <button id="toggle-camera">Switch Camera</button>
+    <button id="capture-button">Take Photo</button>
+    <button id="save-button" style="display: none;">Use Photo</button>
   </div>
 
   <div class="product-list">
@@ -89,105 +154,183 @@
     <table>
       <thead>
         <tr>
-          <th>Expiry Date</th>
-          <th>Scheduled Notification</th>
+          <th>Product Photo</th>
           <th>Days Left</th>
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="product-list"></tbody>
+      <tbody id="product-list">
+        <!-- Products will be dynamically added here -->
+      </tbody>
     </table>
+  </div>
+
+  <!-- Popup Notification -->
+  <div id="popup" class="popup">
+    <div class="popup-header">Notification</div>
+    <div class="popup-body"></div>
   </div>
 
   <script>
     const productForm = document.getElementById('product-form');
+    const photoButton = document.getElementById('photo-button');
+    const toggleCameraButton = document.getElementById('toggle-camera');
+    const cameraContainer = document.getElementById('camera-container');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureButton = document.getElementById('capture-button');
+    const saveButton = document.getElementById('save-button');
     const expiryDateInput = document.getElementById('expiry-date');
-    const scheduledDateInput = document.getElementById('scheduled-date');
     const productList = document.getElementById('product-list');
+    const popup = document.getElementById('popup');
     const products = [];
 
-    // Request notification permission when the page loads
-    if (Notification.permission === "default") {
-      Notification.requestPermission().then(permission => {
-        if (permission !== "granted") {
-          alert("Notifications are disabled. Please enable them to receive reminders.");
-        }
+    let photoData = null; // To store captured photo temporarily
+    let currentFacingMode = 'environment'; // Default to back camera
+
+    // Show camera when "Capture Photo" is clicked
+    photoButton.addEventListener('click', () => {
+      photoData = null; // Reset photoData for a new photo
+      canvas.style.display = 'none'; // Hide previous photo
+      video.style.display = 'block'; // Show the video stream
+      captureButton.style.display = 'block'; // Show the capture button
+      saveButton.style.display = 'none'; // Hide the save button
+
+      cameraContainer.style.display = 'block';
+      startCamera();
+    });
+
+    // Start the camera with the current facing mode
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: currentFacingMode } }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(error => {
+        console.error('Error accessing camera:', error);
+        alert('Unable to access your camera. Please check your device settings.');
       });
     }
 
+    // Toggle camera between front and back
+    toggleCameraButton.addEventListener('click', () => {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      startCamera();
+    });
+
+    // Capture photo from the video stream
+    captureButton.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      photoData = canvas.toDataURL('image/png'); // Store photo as Base64 data temporarily
+      canvas.style.display = 'block'; // Show the captured photo
+      video.style.display = 'none'; // Hide the video stream
+      captureButton.style.display = 'none'; // Hide the capture button
+      saveButton.style.display = 'block'; // Show the save button
+    });
+
+    // Use the captured photo and return to form
+    saveButton.addEventListener('click', () => {
+      cameraContainer.style.display = 'none'; // Hide the camera container
+      alert('Photo captured successfully!');
+    });
+
+    // Handle form submission
     productForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const expiryDate = expiryDateInput.value;
-      const scheduledDate = scheduledDateInput.value;
 
-      if (!expiryDate || !scheduledDate) {
-        alert('Please select both expiry date and scheduled date.');
+      if (!photoData) {
+        alert('Please take a photo of the product.');
         return;
       }
 
+      if (!expiryDate) {
+        alert('Please select an expiry date.');
+        return;
+      }
+
+      // Save product details
       const product = {
-        expiryDate,
-        scheduledDate,
+        photo: photoData, // Independent copy of the current photo
+        expiryDate: expiryDate,
       };
-      products.push(product);
+      products.push(product); // Add product to the list
 
+      // Reset photoData for the next product
+      photoData = null;
+
+      // Update product list
       updateProductList();
-      productForm.reset();
 
-      // Schedule notification
-      scheduleNotification(scheduledDate, `Your product is expiring on ${expiryDate}.`);
+      // Reset form
+      productForm.reset();
     });
 
-    function scheduleNotification(scheduledDate, message) {
-      const notificationTime = new Date(scheduledDate).getTime();
-      const now = Date.now();
-
-      const timeUntilNotification = notificationTime - now;
-
-      if (timeUntilNotification > 0) {
-        setTimeout(() => {
-          showNotification("Reminder", message);
-        }, timeUntilNotification);
-      } else {
-        console.error("Scheduled date is in the past. Notification not scheduled.");
-      }
+    // Show popup notification
+    function showPopup(message) {
+      const popupBody = popup.querySelector('.popup-body');
+      popupBody.textContent = message;
+      popup.classList.add('show');
+      setTimeout(() => {
+        popup.classList.remove('show');
+      }, 5000); // Hide popup after 5 seconds
     }
 
-    function showNotification(title, body) {
-      if (Notification.permission === "granted") {
-        new Notification(title, { body });
-      } else {
-        console.error("Notification permission is not granted.");
-      }
-    }
-
+    // Update the product list
     function updateProductList() {
       productList.innerHTML = '';
       const today = new Date();
 
       products.forEach((product, index) => {
         const expiryDate = new Date(product.expiryDate);
-        const scheduledDate = new Date(product.scheduledDate);
         const timeDiff = expiryDate - today;
         const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
         const row = document.createElement('tr');
         row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
 
-        row.innerHTML = `
-          <td>${expiryDate.toDateString()}</td>
-          <td>${scheduledDate.toDateString()}</td>
-          <td>${daysLeft} days</td>
-          <td><button onclick="removeProduct(${index})">Remove</button></td>
-        `;
+        // Add product photo
+        const photoCell = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = product.photo;
+        img.alt = 'Product Photo';
+        img.style.width = '100px';
+        photoCell.appendChild(img);
+        row.appendChild(photoCell);
+
+        // Add days left
+        const daysLeftCell = document.createElement('td');
+        daysLeftCell.textContent = daysLeft >= 0 ? `${daysLeft} days left` : 'Expired';
+        row.appendChild(daysLeftCell);
+
+        // Add action buttons
+        const actionsCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.style.backgroundColor = '#dc3545';
+        removeButton.addEventListener('click', () => {
+          products.splice(index, 1); // Remove product from the array
+          updateProductList(); // Refresh the list
+        });
+        actionsCell.appendChild(removeButton);
+        row.appendChild(actionsCell);
 
         productList.appendChild(row);
-      });
-    }
 
-    function removeProduct(index) {
-      products.splice(index, 1);
-      updateProductList();
+        // Notify if product is close to expiry (3 days or less)
+        if (daysLeft > 0 && daysLeft <= 3) {
+          showPopup(`Reminder: The product with expiry date ${product.expiryDate} will expire in ${daysLeft} day(s).`);
+        }
+
+        // Notify if product is expired
+        if (daysLeft < 0) {
+          showPopup(`The product with expiry date ${product.expiryDate} has expired.`);
+        }
+      });
     }
   </script>
 </body>
