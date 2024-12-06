@@ -323,12 +323,12 @@
 
         // Notify if product is close to expiry (3 days or less)
         if (daysLeft > 0 && daysLeft <= 3) {
-          showPopup(`Reminder: The product with expiry date ${product.expiryDate} will expire in ${daysLeft} day(s).`);
+          showPopup(`The product will expire in ${daysLeft} day(s). Please use it soon.`);
         }
 
         // Notify if product is expired
         if (daysLeft < 0) {
-          showPopup(`The product with expiry date ${product.expiryDate} has expired.`);
+          showPopup(`The product expired ${Math.abs(daysLeft)} day(s) ago. Dispose of it immediately.`);
         }
       });
     }
