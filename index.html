@@ -125,6 +125,11 @@
     let photoData = null;
     let currentFacingMode = 'environment'; // Default to back camera
 
+    // Check for notification permissions
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
     // Show camera when "Capture Photo" is clicked
     photoButton.addEventListener('click', () => {
       photoData = null; // Reset photoData for a new photo
@@ -248,11 +253,26 @@
 
         productList.appendChild(row);
 
+        // Notify if product is about to expire
+        if (daysLeft > 0 && daysLeft <= 3) {
+          sendNotification(product.photo, daysLeft);
+        }
+
         // Notify if product is expired
         if (daysLeft < 0) {
           alert(`The product with expiry date ${product.expiryDate} has expired.`);
         }
       });
+    }
+
+    // Send a notification
+    function sendNotification(photo, daysLeft) {
+      if (Notification.permission === "granted") {
+        new Notification("Product Expiry Reminder", {
+          body: `A product is going to expire in ${daysLeft} day(s).`,
+          icon: photo // Use the product photo as the notification icon
+        });
+      }
     }
   </script>
 </body>
