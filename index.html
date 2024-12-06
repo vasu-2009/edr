@@ -183,162 +183,166 @@
   </div>
 
   <script>
-   const productForm = document.getElementById('product-form');
-const photoButton = document.getElementById('photo-button');
-const toggleCameraButton = document.getElementById('toggle-camera');
-const cameraContainer = document.getElementById('camera-container');
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const captureButton = document.getElementById('capture-button');
-const saveButton = document.getElementById('save-button');
-const expiryDateInput = document.getElementById('expiry-date');
-const productList = document.getElementById('product-list');
-const products = [];
+    const productForm = document.getElementById('product-form');
+    const photoButton = document.getElementById('photo-button');
+    const toggleCameraButton = document.getElementById('toggle-camera');
+    const cameraContainer = document.getElementById('camera-container');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureButton = document.getElementById('capture-button');
+    const saveButton = document.getElementById('save-button');
+    const expiryDateInput = document.getElementById('expiry-date');
+    const productList = document.getElementById('product-list');
+    const popup = document.getElementById('popup');
+    const products = [];
 
-let photoData = null; // To store captured photo temporarily
-let currentFacingMode = 'environment'; // Default to back camera
+    let photoData = null; // To store captured photo temporarily
+    let currentFacingMode = 'environment'; // Default to back camera
 
-photoButton.addEventListener('click', () => {
-  photoData = null;
-  canvas.style.display = 'none';
-  video.style.display = 'block';
-  captureButton.style.display = 'block';
-  saveButton.style.display = 'none';
+    // Show camera when "Capture Photo" is clicked
+    photoButton.addEventListener('click', () => {
+      photoData = null; // Reset photoData for a new photo
+      canvas.style.display = 'none'; // Hide previous photo
+      video.style.display = 'block'; // Show the video stream
+      captureButton.style.display = 'block'; // Show the capture button
+      saveButton.style.display = 'none'; // Hide the save button
 
-  cameraContainer.style.display = 'block';
-  startCamera();
-});
-
-function startCamera() {
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { exact: currentFacingMode } },
-  })
-    .then((stream) => {
-      video.srcObject = stream;
-    })
-    .catch((error) => {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access your camera. Please check your device settings.');
+      cameraContainer.style.display = 'block';
+      startCamera();
     });
-}
 
-toggleCameraButton.addEventListener('click', () => {
-  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-  startCamera();
-});
-
-captureButton.addEventListener('click', () => {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  photoData = canvas.toDataURL('image/png');
-  canvas.style.display = 'block';
-  video.style.display = 'none';
-  captureButton.style.display = 'none';
-  saveButton.style.display = 'block';
-});
-
-saveButton.addEventListener('click', () => {
-  cameraContainer.style.display = 'none';
-  alert('Photo captured successfully!');
-});
-
-productForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const expiryDate = expiryDateInput.value;
-
-  if (!photoData) {
-    alert('Please take a photo of the product.');
-    return;
-  }
-
-  if (!expiryDate) {
-    alert('Please select an expiry date.');
-    return;
-  }
-
-  const product = {
-    photo: photoData,
-    expiryDate: expiryDate,
-  };
-  products.push(product);
-
-  photoData = null;
-
-  updateProductList();
-  productForm.reset();
-});
-
-function sendEmail(product) {
-  const emailData = {
-    to: 'user@example.com', // Replace with the actual recipient email
-    subject: 'Product Expiry Notification',
-    body: `The product with expiry date ${product.expiryDate} has expired.`,
-  };
-
-  fetch('/send-email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(emailData),
-  })
-    .then((response) => {
-      if (response.ok) {
-        console.log('Email sent successfully.');
-      } else {
-        console.error('Failed to send email.');
-      }
-    })
-    .catch((error) => {
-      console.error('Error sending email:', error);
-    });
-}
-
-function updateProductList() {
-  productList.innerHTML = '';
-  const today = new Date();
-
-  products.forEach((product, index) => {
-    const expiryDate = new Date(product.expiryDate);
-    const timeDiff = expiryDate - today;
-    const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-    const row = document.createElement('tr');
-    row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
-
-    const photoCell = document.createElement('td');
-    const img = document.createElement('img');
-    img.src = product.photo;
-    img.alt = 'Product Photo';
-    img.style.width = '100px';
-    photoCell.appendChild(img);
-    row.appendChild(photoCell);
-
-    const daysLeftCell = document.createElement('td');
-    daysLeftCell.textContent = daysLeft >= 0 ? `${daysLeft} days left` : 'Expired';
-    row.appendChild(daysLeftCell);
-
-    const actionsCell = document.createElement('td');
-    const removeButton = document.createElement('button');
-    removeButton.textContent = 'Remove';
-    removeButton.style.backgroundColor = '#dc3545';
-    removeButton.addEventListener('click', () => {
-      products.splice(index, 1);
-      updateProductList();
-    });
-    actionsCell.appendChild(removeButton);
-    row.appendChild(actionsCell);
-
-    productList.appendChild(row);
-
-    if (daysLeft < 0) {
-      sendEmail(product);
+    // Start the camera with the current facing mode
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: currentFacingMode } }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(error => {
+        console.error('Error accessing camera:', error);
+        alert('Unable to access your camera. Please check your device settings.');
+      });
     }
-  });
-}
+
+    // Toggle camera between front and back
+    toggleCameraButton.addEventListener('click', () => {
+      currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+      startCamera();
+    });
+
+    // Capture photo from the video stream
+    captureButton.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      photoData = canvas.toDataURL('image/png'); // Store photo as Base64 data temporarily
+      canvas.style.display = 'block'; // Show the captured photo
+      video.style.display = 'none'; // Hide the video stream
+      captureButton.style.display = 'none'; // Hide the capture button
+      saveButton.style.display = 'block'; // Show the save button
+    });
+
+    // Use the captured photo and return to form
+    saveButton.addEventListener('click', () => {
+      cameraContainer.style.display = 'none'; // Hide the camera container
+      alert('Photo captured successfully!');
+    });
+
+    // Handle form submission
+    productForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const expiryDate = expiryDateInput.value;
+
+      if (!photoData) {
+        alert('Please take a photo of the product.');
+        return;
+      }
+
+      if (!expiryDate) {
+        alert('Please select an expiry date.');
+        return;
+      }
+
+      // Save product details
+      const product = {
+        photo: photoData, // Independent copy of the current photo
+        expiryDate: expiryDate,
+      };
+      products.push(product); // Add product to the list
+
+      // Reset photoData for the next product
+      photoData = null;
+
+      // Update product list
+      updateProductList();
+
+      // Reset form
+      productForm.reset();
+    });
+
+    // Show popup notification
+    function showPopup(message) {
+      const popupBody = popup.querySelector('.popup-body');
+      popupBody.textContent = message;
+      popup.classList.add('show');
+      setTimeout(() => {
+        popup.classList.remove('show');
+      }, 5000); // Hide popup after 5 seconds
+    }
+
+    // Update the product list
+    function updateProductList() {
+      productList.innerHTML = '';
+      const today = new Date();
+
+      products.forEach((product, index) => {
+        const expiryDate = new Date(product.expiryDate);
+        const timeDiff = expiryDate - today;
+        const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+        const row = document.createElement('tr');
+        row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
+
+        // Add product photo
+        const photoCell = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = product.photo;
+        img.alt = 'Product Photo';
+        img.style.width = '100px';
+        photoCell.appendChild(img);
+        row.appendChild(photoCell);
+
+        // Add days left
+        const daysLeftCell = document.createElement('td');
+        daysLeftCell.textContent = daysLeft >= 0 ? `${daysLeft} days left` : 'Expired';
+        row.appendChild(daysLeftCell);
+
+        // Add action buttons
+        const actionsCell = document.createElement('td');
+        const removeButton = document.createElement('button');
+        removeButton.textContent = 'Remove';
+        removeButton.style.backgroundColor = '#dc3545';
+        removeButton.addEventListener('click', () => {
+          products.splice(index, 1); // Remove product from the array
+          updateProductList(); // Refresh the list
+        });
+        actionsCell.appendChild(removeButton);
+        row.appendChild(actionsCell);
+
+        productList.appendChild(row);
+
+        // Notify if product is close to expiry
+        if (daysLeft > 0 && daysLeft <= 3) {
+          showPopup(`Reminder: The product with expiry date ${product.expiryDate} will expire in ${daysLeft} day(s).`);
+        }
+
+        // Notify if product is expired
+        if (daysLeft < 0) {
+          showPopup(`The product with expiry date ${product.expiryDate} has expired.`);
+        }
+      });
+    }
   </script>
 </body>
 </html>
-
-
