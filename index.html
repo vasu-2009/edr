@@ -271,6 +271,29 @@
       productForm.reset();
     });
 
+    // Request permission for notifications
+    function requestNotificationPermission() {
+      if (Notification.permission !== "granted") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            console.log('Notification permission granted.');
+          } else {
+            alert('Notifications are blocked. Please enable them.');
+          }
+        });
+      }
+    }
+
+    // Show mobile notification
+    function showMobileNotification(message) {
+      if (Notification.permission === "granted") {
+        new Notification("Product Expiry Alert", {
+          body: message,
+          icon: 'https://via.placeholder.com/128', // Placeholder icon
+        });
+      }
+    }
+
     // Show popup notification
     function showPopup(message) {
       const popupBody = popup.querySelector('.popup-body');
@@ -281,7 +304,7 @@
       }, 5000); // Hide popup after 5 seconds
     }
 
-    // Update the product list
+    // Update the product list and check for expiry
     function updateProductList() {
       productList.innerHTML = '';
       const today = new Date();
@@ -294,7 +317,6 @@
         const row = document.createElement('tr');
         row.className = daysLeft < 0 ? 'expired' : daysLeft <= 3 ? 'warning' : '';
 
-        // Add product photo
         const photoCell = document.createElement('td');
         const img = document.createElement('img');
         img.src = product.photo;
@@ -304,12 +326,10 @@
         photoCell.appendChild(img);
         row.appendChild(photoCell);
 
-        // Add days left
         const daysCell = document.createElement('td');
         daysCell.textContent = `${daysLeft} days`;
         row.appendChild(daysCell);
 
-        // Add actions
         const actionCell = document.createElement('td');
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
@@ -323,14 +343,19 @@
 
         productList.appendChild(row);
 
-        // Show notification if the product is about to expire in 3 days or has expired
+        // Send mobile notification when product is about to expire or is expired
         if (daysLeft <= 3 && daysLeft >= 0) {
-          showPopup('A product is about to expire in 3 days or less!');
+          showMobileNotification('A product is about to expire in 3 days or less!');
         } else if (daysLeft < 0) {
-          showPopup('A product has expired!');
+          showMobileNotification('A product has expired!');
         }
       });
     }
+
+    // Request permission for notifications when page loads
+    document.addEventListener('DOMContentLoaded', requestNotificationPermission);
   </script>
 </body>
 </html>
+
+
