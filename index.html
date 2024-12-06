@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Product Expiry Notifier</title>
+
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "1c3825ed-a611-4c39-8477-469243a17d64",
+    });
+  });
+</script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -123,48 +134,6 @@
         opacity: 0;
         transform: translateY(20px);
       }
-
-.product-list table {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 20px;
-}
-
-th, td {
-  padding: 10px;
-  text-align: left;
-  transition: background-color 0.3s ease;
-}
-
-tr:hover {
-  background-color: #f1f1f1;
-}
-
-.expired {
-  background-color: #ffcccc !important;
-  color: #b20000;
-}
-
-.warning {
-  background-color: #fff3cd !important;
-  color: #856404;
-}
-
-.popup {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
-  font-family: 'Arial', sans-serif;
-  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  animation: fadeIn 0.5s forwards, fadeOut 0.5s 4.5s forwards;
-}
-
     }
   </style>
 </head>
@@ -372,44 +341,8 @@ tr:hover {
         if (daysLeft < 0) {
           showPopup(`The product with expiry date ${product.expiryDate} has expired.`);
         }
-
-if ('serviceWorker' in navigator && 'PushManager' in window) {
-  navigator.serviceWorker.register('sw.js')
-    .then(swReg => {
-      console.log('Service Worker is registered', swReg);
-    })
-    .catch(error => {
-      console.error('Service Worker Error', error);
-    });
-}
-
-function showPushNotification(title, body) {
-  navigator.serviceWorker.ready.then(swRegistration => {
-    swRegistration.showNotification(title, {
-      body,
-      icon: 'notification-icon.png', // Add a relevant icon here
-    });
-  });
-}
-
-// Example usage in updateProductList:
-function notifyUser(product, daysLeft) {
-  if (daysLeft <= 3 && daysLeft > 0) {
-    showPushNotification(
-      'Expiry Reminder',
-      `Your product will expire in ${daysLeft} day(s).`
-    );
-  } else if (daysLeft < 0) {
-    showPushNotification(
-      'Product Expired',
-      `Your product expired on ${product.expiryDate}.`
-    );
-  }
-}
       });
     }
   </script>
 </body>
 </html>
-
-
